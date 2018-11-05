@@ -5,6 +5,7 @@ import numpy as np
 from meik.utils.losses import *
 from meik.layers import Layer
 from meik.metrics import *
+from meik.standardizer import Standardizer
 
 class Sequential:
     
@@ -34,7 +35,7 @@ class Sequential:
         layer.init(_id, inputs)
         self.layers.append(layer)
             
-    def build(self, loss = None, learning_rate = 0.01, metrics = ['default'], prediction_thresholds = np.array([0.5])):
+    def build(self, loss = None, normalization = 'none', learning_rate = 0.01, metrics = ['default'], prediction_thresholds = np.array([0.5])):
         
         th = prediction_thresholds
         
@@ -42,6 +43,9 @@ class Sequential:
         
         self.params['loss'] = loss
         self.params['learning_rate'] = learning_rate
+        self.params['normalization'] = normalization
+        
+        self.standardize = Standardizer(method = normalization)
         
         if loss == 'mae' or loss == 'mse':
 
@@ -102,19 +106,15 @@ class Sequential:
             dA = layers[i].backprop(dA)
             layers[i].update()
             
-    def normalize(self, X):
-        # TO DO: feature normalization
-        pass 
-        
     def train(self, X, Y, epochs=1, verbose=1):
         
         layers = self.layers
         
-        # TO DO: normalization
+        X_norm = self.standardize.train(X)
         
         for i in range(epochs):
             
-            A = self.predict(X)
+            A = self.predict(X_norm)
             self.backprop(Y, A)
             
             cost = self.loss(Y, A)
@@ -128,6 +128,8 @@ class Sequential:
         
     def evaluate(self, X, Y):
         
+        X = self.standardize.evaluate(X)
+            
         A = self.predict(X)
         score = self.metrics.evaluate(Y, A)
         

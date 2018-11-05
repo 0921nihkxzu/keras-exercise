@@ -1,0 +1,10 @@
+meik added to tf env path by adding the file meik.pth with the path to meik into the folder ~/anaconda3/envs/tf/lib/python3.6/site-packages/
+
+updating usb disks with copy of repo via:
+rsync -r ../meik/ /media/markus/9414-678D/meik/
+rsync -r ../meik/ /media/markus/disk/meik/
+
+standardization served as a good example of what seems like a nice way to structure the code going from high level to low:
+- model has a standardization object with high level functions for where it needs to be called
+- standardization object produces a standardization depending on the type provided on initialization by the model
+- basic functions for calculating standardizations are located in utilities

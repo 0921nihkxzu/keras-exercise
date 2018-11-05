@@ -50,16 +50,13 @@ class Dense(Layer):
             self.g = linear
             self.dg = dlinear
             
-        self.Z = None
         self.W = None
         self.b = None
         self.A = None
         self.A0 = None
         
-        self.dZ = None
         self.dW = None
         self.db = None
-        self.dA = None
 
     def init(self, _id, inputs):
 
@@ -88,7 +85,6 @@ class Dense(Layer):
         Z = np.matmul(W, A0)+b
         A = self.g(Z)
         
-        self.Z = Z
         self.A = A
         self.A0 = A0
         
@@ -96,22 +92,19 @@ class Dense(Layer):
         
     def backprop(self, dA0):
         
-        Z = self.Z
         A = self.A
         A0 = self.A0
         W = self.W
         
-        m = Z.shape[1]
+        m = A.shape[1]
         
         dZ = dA0*self.dg(A)
         dW = 1./m*np.matmul(dZ, A0.T)
         db = 1./m*np.sum(dZ, axis=1, keepdims=True)
         dA = np.matmul(W.T, dZ)
         
-        self.dZ = dZ
         self.dW = dW
         self.db = db
-        self.dA = dA
         
         return dA
     
@@ -127,10 +120,8 @@ class Dense(Layer):
         db = 1./m*np.sum(dZ, axis=1, keepdims=True)
         dA = np.matmul(W.T, dZ)
         
-        self.dZ = dZ
         self.dW = dW
         self.db = db
-        self.dA = dA
         
         return dA
     
