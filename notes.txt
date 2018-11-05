@@ -8,3 +8,5 @@ standardization served as a good example of what seems like a nice way to struct
 - model has a standardization object with high level functions for where it needs to be called
 - standardization object produces a standardization depending on the type provided on initialization by the model
 - basic functions for calculating standardizations are located in utilities
+
+Note to self: make commits to git more frequently!!!
