@@ -2,7 +2,7 @@
 # Contains the network model class
 
 import numpy as np
-from meik.utils.losses import *
+from meik import utils
 from meik.layers import Layer
 from meik.metrics import *
 from meik.normalizers import Normalizer
@@ -46,6 +46,8 @@ class Sequential:
         self.params['normalization'] = normalization
         
         self.normalize = Normalizer(method = normalization)
+
+        self.loss = getattr(utils.losses,loss)
         
         if loss == 'mae' or loss == 'mse':
 
@@ -55,9 +57,6 @@ class Sequential:
             
             # setting up evaluation metrics
             self.metrics = metrics_regression(metrics)
-            
-            # setting up loss function
-            self.loss = (lambda loss: mae if loss == 'mae' else mse)(loss)
 
             # printing
             self.print_text = "Epoch %d/%d - "+loss+": %.4f"
@@ -68,14 +67,10 @@ class Sequential:
             metrics = (lambda metrics: ['accuracy'] if metrics == ['default'] else metrics)(metrics)
             
             # choosing evaluation metric type
-            mbc = metrics_binary_classification(metrics = metrics, prediction_thresholds = th)
-            mcc = metrics_categorical_classification(metrics = metrics, prediction_thresholds = th)
-            
-            # setting up evaluation metrics
-            self.metrics = (lambda loss: mbc if loss == 'binary_crossentropy' else mcc)(loss)
-            
-            # setting up loss function
-            self.loss = (lambda loss: binary_crossentropy if loss == 'binary_crossentropy' else categorical_crossentropy)(loss)
+            if loss == 'binary_crossentropy':
+                self.metrics = metrics_binary_classification(metrics = metrics, prediction_thresholds = th)
+            else:
+                self.metrics = metrics_categorical_classification(metrics = metrics, prediction_thresholds = th)
             
             # printing
             self.print_text = "Epoch %d/%d - log loss: %.4f - acc: %.4f"
