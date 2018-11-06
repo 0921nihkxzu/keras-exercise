@@ -2,11 +2,56 @@
 # Contains all the classes for metrics
 
 import numpy as np
+from meik.utils import losses
+
+class Metrics:
+
+	def __init__(self, loss = None, train_metrics = ['default'], eval_metrics = ['default'], thresholds = np.array([0.5])):
+
+		assert(loss in ['mae', 'mse', 'binary_crossentropy', 'categorical_crossentropy']), "Provide loss as either 'mae', 'mse', 'binary_crossentropy or 'categorical_crossentropy' using kwarg 'loss'"
+
+		self.loss = loss
+
+		defaults = {
+			'mae': ['mae'],
+			'mse': ['mse'],
+			'binary_crossentropy': ['binary_crossentropy','accuracy'],
+			'categorical_crossentropy': ['accuracy']
+		}
+
+		# assigning default metric if no metric provided, else assigning provided metric
+		fdef = lambda metrics, loss: defaults[loss] if metrics == ['default'] else metrics
+		tm = fdef(train_metrics, loss)
+		em = fdef(eval_metrics, loss)
+
+		metrics = {
+			'mae': metrics_regression,
+			'mse': metrics_regression,
+			'binary_crossentropy': metrics_binary_classification,
+			'categorical_crossentropy': metrics_categorical_classification
+		}
+
+		self.train_metrics = metrics[loss](metrics = tm)
+		self.eval_metrics = metrics[loss](metrics = em, thresholds = thresholds)
+
+	def train(self, Y, A):
+		self.score = self.train_metrics.evaluate(Y, A)
+		return self.score
+
+	def evaluate(self, Y, A):
+		self.score = self.eval_metrics.evaluate(Y, A)
+		return self.score
+
+	def train_print(self, i, epochs):
+		self.train_metrics.train_print(i, epochs, self.loss, self.score)
+		return True
+
+import numpy as np
 from meik.utils.losses import mae, mse 
 
 class metrics_regression:
 	
-	def __init__(self, metrics = ['mae']):
+	def __init__(self, metrics = ['mae'], thresholds = None):
 		
 		for metric in metrics:
 			assert(metric in ['mae', 'mse', 'rmse', 'r2']), "Make sure the metrics you have provided belong to the following: 'mae', 'mse', 'rmse' or 'r2'"
@@ -24,6 +69,15 @@ class metrics_regression:
 			results[metric] = method(Y,A)
 		
 		return results
+
+	def train_print(self, i, epochs, loss, results):
+
+		cost = results[loss]
+		print_text = "Epoch %d/%d - "+loss+": %.4f"
+		print_params = (i+1, epochs, cost)
+		print(print_text % print_params)
+
+		return True
 	
 	def rmse(self,y,yhat):
 		return np.sqrt(mse(y,yhat))
@@ -33,9 +87,6 @@ class metrics_regression:
 		SS_tot = 1./m*np.sum((y - np.mean(y))**2)
 		SS_res = mse(y,yhat)
 		return 1 - (SS_res/SS_tot)
-	
-# metrics_binary_classification.py
-# Binary classification metrics class
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -43,18 +94,21 @@ from meik.utils.losses import binary_crossentropy
 
 class metrics_binary_classification:
 	
-	def __init__(self, metrics = ['accuracy'], prediction_thresholds = np.array([0.5])):
+	def __init__(self, metrics = ['binary_crossentropy','accuracy'], thresholds = np.array([0.5])):
 		
 		for metric in metrics:
 			assert(metric in ['accuracy', 'binary_crossentropy', 'precision', 'sensitivity', 'specificity', 'confusion_matrix', 'AUC', 'ROC']), "Make sure the metrics you have provided belong to the following: 'accuracy', 'binary_crossentropy', 'precision', 'sensitivity', 'specificity', 'confusion_matrix', 'AUC' or 'ROC'"
 		
 		self.metrics = metrics
-		self.th = prediction_thresholds
-			
+		self.th = thresholds
+		
 	def evaluate(self, Y, A):
 		
 		self.populations(Y, A)
-		
+
+		self.accuracy_ = self.accuracy()
+		self.binary_crossentropy_ = self.binary_crossentropy(Y, A)
+
 		results = {}
 		for metric in self.metrics:
 			method = getattr(self, metric)
@@ -65,15 +119,26 @@ class metrics_binary_classification:
 			results[metric] = result
 			
 		return results
+
+	def train_print(self, i, epochs, loss, results):
+
+		accuracy = self.accuracy_
+		cost = self.binary_crossentropy_
+
+		print_text = "Epoch %d/%d - binary_crossentropy: %.4f - acc: %.4f"
+		print_params = (i+1, epochs, cost, accuracy)
+		print(print_text % print_params)
+
+		return True
 	
 	def binary_crossentropy(self, Y, A):
-		
+		# here for clarity
 		return binary_crossentropy(Y, A)
 		
 	def populations(self, Y, A):
 		
 		# Calculates True Positives (TP), False Negatives (FN), True Negatives (TN) and False Positives (FP)
-		# for the prediction thresholds provided by prediction_thresholds
+		# for the prediction thresholds provided by thresholds
 		
 		th = self.th
 		n = th.shape[0]
@@ -193,8 +258,6 @@ class metrics_binary_classification:
 		
 		return True
 	
-#from meik.metrics import metrics_binary_classification
-
 class metrics_categorical_classification(metrics_binary_classification):
 	
 	def evaluate(self, Y, A):
@@ -202,7 +265,7 @@ class metrics_categorical_classification(metrics_binary_classification):
 		c = Y.shape[0]
 		m = Y.shape[1]
 		results = [{} for i in range(c)]
-		
+		results.append({'categorical_crossentropy': losses.categorical_crossentropy(Y, A)})
 		for i in range(c):
 			
 			self.populations(Y[i,:].reshape(1,m), A[i,:].reshape(1,m))
@@ -219,3 +282,12 @@ class metrics_categorical_classification(metrics_binary_classification):
 			
 		return results
 		
+	def train_print(self, i, epochs, loss, results):
+
+		cost = results[-1]['categorical_crossentropy']
+
+		print_text = "Epoch %d/%d - categorical_crossentropy: %.4f"
+		print_params = (i+1, epochs, cost)
+		print(print_text % print_params)
+
+		return True

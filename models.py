@@ -2,9 +2,9 @@
 # Contains the network model class
 
 import numpy as np
-from meik import utils
+from meik.utils.losses import *
 from meik.layers import Layer
-from meik.metrics import *
+from meik.metrics import Metrics
 from meik.normalizers import Normalizer
 
 class Sequential:
@@ -35,47 +35,15 @@ class Sequential:
         layer.init(_id, inputs)
         self.layers.append(layer)
             
-    def build(self, loss = None, normalization = 'none', learning_rate = 0.01, metrics = ['default'], prediction_thresholds = np.array([0.5])):
-        
-        th = prediction_thresholds
-        
-        assert(loss in ['mae', 'mse', 'binary_crossentropy', 'categorical_crossentropy']), "Provide loss as either 'mae', 'mse', 'binary_crossentropy or 'categorical_crossentropy' using kwarg 'loss'"
+    def build(self, loss = None, normalization = 'none', learning_rate = 0.01, train_metrics = ['default'], eval_metrics = ['default'], thresholds = np.array([0.5])):
         
         self.params['loss'] = loss
         self.params['learning_rate'] = learning_rate
         self.params['normalization'] = normalization
         
         self.normalize = Normalizer(method = normalization)
-
-        self.loss = getattr(utils.losses,loss)
         
-        if loss == 'mae' or loss == 'mse':
-
-            # This an annoying thing that's here to choose the default metric
-            # because there isn't a single default metric for all loss functions
-            metrics = (lambda metrics, loss: [loss] if metrics == ['default'] else metrics)(metrics, loss)
-            
-            # setting up evaluation metrics
-            self.metrics = metrics_regression(metrics)
-
-            # printing
-            self.print_text = "Epoch %d/%d - "+loss+": %.4f"
-            self.print_params = lambda i, epochs, cost, A, Y: (i+1, epochs, cost)
-            
-        elif loss == 'binary_crossentropy' or loss == 'categorical_crossentropy':
-            
-            metrics = (lambda metrics: ['accuracy'] if metrics == ['default'] else metrics)(metrics)
-            
-            # choosing evaluation metric type
-            if loss == 'binary_crossentropy':
-                self.metrics = metrics_binary_classification(metrics = metrics, prediction_thresholds = th)
-            else:
-                self.metrics = metrics_categorical_classification(metrics = metrics, prediction_thresholds = th)
-            
-            # printing
-            self.print_text = "Epoch %d/%d - log loss: %.4f - acc: %.4f"
-            acc = lambda Y, A: np.sum((A > 0.5) == Y)/Y.size
-            self.print_params = lambda i, epochs, cost, A, Y: (i+1, epochs, cost, acc(Y, A))
+        self.metrics = Metrics(loss = loss, train_metrics = train_metrics, eval_metrics = eval_metrics, thresholds = thresholds)
 
         # TO DO: proper optimizer objects passed to layer
         for i in range(len(self.layers)):
@@ -112,20 +80,21 @@ class Sequential:
             A = self.predict(X_norm)
             self.backprop(Y, A)
             
-            cost = self.loss(Y, A)
+            cost = self.metrics.train(Y, A)
             self.cost.append(cost)
             
             if verbose == 1:
-                print(self.print_text % self.print_params(i, epochs, cost, A, Y))
+                self.metrics.train_print(i,epochs)
             
         print("------------ Final performance ------------\n")
-        print(self.print_text % self.print_params(i, epochs, cost, A, Y))     
+        self.metrics.train_print(i,epochs)
         
     def evaluate(self, X, Y):
         
         X = self.normalize.evaluate(X)
             
         A = self.predict(X)
+        
         score = self.metrics.evaluate(Y, A)
         
         self.score = score
