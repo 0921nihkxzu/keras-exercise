@@ -3,11 +3,11 @@
 
 import numpy as np
 
-def MAE(y,yhat):
+def mae(y,yhat):
     m = y.shape[1]
     return 1./m*np.sum(np.abs(y-yhat))
 
-def MSE(y,yhat):
+def mse(y,yhat):
     m = y.shape[1]
     return 1./m*np.sum((y-yhat)**2)
 
