@@ -1,12 +1,25 @@
+1.
 meik added to tf env path by adding the file meik.pth with the path to meik into the folder ~/anaconda3/envs/tf/lib/python3.6/site-packages/
 
+2.
 updating usb disks with copy of repo via:
 rsync -r ../meik/ /media/markus/9414-678D/meik/
 rsync -r ../meik/ /media/markus/disk/meik/
 
+3.
 standardization served as a good example of what seems like a nice way to structure the code going from high level to low:
 - model has a standardization object with high level functions for where it needs to be called
 - standardization object produces a standardization depending on the type provided on initialization by the model
 - basic functions for calculating normalizations are located in utilities
 
+4.
 Note to self: make commits to git more frequently!!!
+
+5.
+Looking at commit 91661b28478a745af7b453c04365745acd1ad769: 
+"simplified sequential model to place metric initialization and metric calling details into Metric class in metrics.py; added printing to each individual metric class in metrics.py; verified code in DNN_.ipynb for most part--some non-optimal code in terms of printing and certain training evaluation, but this is not a priority and is thus left as such"
+
+- in more detail the code for metrics_binary_classification.evaluate(), metrics_binary_classification.train_print(), metrics_categorical_clasiffication.evaluate() and metrics_categorical_clasiffication.train_print() could be cleaned up
+- basically it's the train_print that is producing a mess (works just ugly)
+
+6.
