@@ -1,9 +1,9 @@
-# standardizer.py
+# normalizer.py
 
 import numpy as np
-from meik.utils.standardizations import *
+from meik.utils.normalizations import *
 
-class Standardizer:
+class Normalizer:
     
     def __init__(self, method = 'none'):
         

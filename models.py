@@ -5,7 +5,7 @@ import numpy as np
 from meik.utils.losses import *
 from meik.layers import Layer
 from meik.metrics import *
-from meik.standardizer import Standardizer
+from meik.normalizers import Normalizer
 
 class Sequential:
     
@@ -45,7 +45,7 @@ class Sequential:
         self.params['learning_rate'] = learning_rate
         self.params['normalization'] = normalization
         
-        self.standardize = Standardizer(method = normalization)
+        self.normalize = Normalizer(method = normalization)
         
         if loss == 'mae' or loss == 'mse':
 
@@ -110,7 +110,7 @@ class Sequential:
         
         layers = self.layers
         
-        X_norm = self.standardize.train(X)
+        X_norm = self.normalize.train(X)
         
         for i in range(epochs):
             
@@ -128,7 +128,7 @@ class Sequential:
         
     def evaluate(self, X, Y):
         
-        X = self.standardize.evaluate(X)
+        X = self.normalize.evaluate(X)
             
         A = self.predict(X)
         score = self.metrics.evaluate(Y, A)
