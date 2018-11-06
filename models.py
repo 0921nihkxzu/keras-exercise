@@ -57,7 +57,7 @@ class Sequential:
             self.metrics = metrics_regression(metrics)
             
             # setting up loss function
-            self.loss = (lambda loss: MAE if loss == 'mae' else MSE)(loss)
+            self.loss = (lambda loss: mae if loss == 'mae' else mse)(loss)
 
             # printing
             self.print_text = "Epoch %d/%d - "+loss+": %.4f"
