@@ -5,6 +5,7 @@ import numpy as np
 from meik.utils import activations
 from meik.utils import initializations
 from meik.initializer import Initializer
+from meik.regularizer import Regularizer
 
 class Layer:
 	
@@ -21,7 +22,7 @@ class Layer:
 		
 class Dense(Layer):
 	
-	def __init__(self, units = None, activation = None, initialization = 'default', init_params = None, inputs = None):
+	def __init__(self, units = None, activation = None, initialization = None, init_params = None, inputs = None, regularization = None, reg_lambda = 0.01):
 		
 		Layer.__init__(self)
 		
@@ -35,8 +36,12 @@ class Dense(Layer):
 		self.activation = activation
 		self.learning_rate = None
 
+		# setting initializer
 		self.initializer = Initializer(activation = activation, initialization = initialization, init_params = init_params)
-		
+
+		# setting regularizer
+		self.regularizer = Regularizer(regularization, reg_lambda)
+
 		# setting activation methods
 		self.g = getattr(activations, activation)
 		self.dg = getattr(activations, 'd'+activation)

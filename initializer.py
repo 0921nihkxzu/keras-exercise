@@ -7,7 +7,7 @@ class Initializer:
 	def __init__(self, activation = None, initialization = None, init_params = None):
 
 		assert(activation in ['sigmoid','relu','tanh','softmax','linear']), "Provide activation as either 'sigmoid','relu','tanh','softmax' or 'linear' using kwarg 'activation'"
-		assert(initialization in ['default', 'normal', 'uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']), "Provide initialization as either 'normal', 'uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform'"
+		assert(initialization in [None, 'normal', 'uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']), "Provide initialization as either 'normal', 'uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform'"
 
 		self.activation = activation
 
@@ -20,7 +20,7 @@ class Initializer:
 			'linear': 'glorot_uniform'
 		}
 
-		if initialization == 'default':
+		if initialization == None:
 			initialization = default_init[activation]
 
 		self.initialization = initialization
