@@ -33,7 +33,6 @@ def drelu(A):
 def dtanh(A):
     return (1-A**2)
 
-
 # omitted since only used at output and dL/dz provides Y-A
-# def dsoftmax(A,Z):
-#    pass
+def dsoftmax(A,Z):
+    pass
