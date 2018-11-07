@@ -1,0 +1,2 @@
+- integrate regularization loss with sequential and metrics
+- integrate regularization update with dense layer backprop
