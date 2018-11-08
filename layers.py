@@ -91,7 +91,7 @@ class Dense(Layer):
 		m = A.shape[1]
 		
 		dZ = dA0*self.dg(A)
-		dW = 1./m*np.matmul(dZ, A0.T)
+		dW = 1./m*(np.matmul(dZ, A0.T) + self.regularizer.update(W))
 		db = 1./m*np.sum(dZ, axis=1, keepdims=True)
 		dA = np.matmul(W.T, dZ)
 		
@@ -108,7 +108,7 @@ class Dense(Layer):
 		
 		m = A.shape[1]
 		
-		dW = 1./m*np.matmul(dZ, A0.T)
+		dW = 1./m*(np.matmul(dZ, A0.T) + self.regularizer.update(W))
 		db = 1./m*np.sum(dZ, axis=1, keepdims=True)
 		dA = np.matmul(W.T, dZ)
 		

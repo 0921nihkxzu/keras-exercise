@@ -6,7 +6,7 @@ from meik.utils import losses
 
 class Metrics:
 
-	def __init__(self, loss = None, train_metrics = ['default'], eval_metrics = ['default'], thresholds = np.array([0.5])):
+	def __init__(self, loss = None, train_metrics = None, eval_metrics = None, thresholds = np.array([0.5])):
 
 		assert(loss in ['mae', 'mse', 'binary_crossentropy', 'categorical_crossentropy']), "Provide loss as either 'mae', 'mse', 'binary_crossentropy or 'categorical_crossentropy' using kwarg 'loss'"
 
@@ -20,7 +20,7 @@ class Metrics:
 		}
 
 		# assigning default metric if no metric provided, else assigning provided metric
-		fdef = lambda metrics, loss: defaults[loss] if metrics == ['default'] else metrics
+		fdef = lambda metrics, loss: defaults[loss] if metrics == None else metrics
 		tm = fdef(train_metrics, loss)
 		em = fdef(eval_metrics, loss)
 
@@ -34,17 +34,37 @@ class Metrics:
 		self.train_metrics = metrics[loss](metrics = tm)
 		self.eval_metrics = metrics[loss](metrics = em, thresholds = thresholds)
 
-	def train(self, Y, A):
-		self.score = self.train_metrics.evaluate(Y, A)
-		return self.score
+	def train(self, Y, A, reg_loss):
+		
+		score = self.train_metrics.evaluate(Y, A)
 
-	def evaluate(self, Y, A):
-		self.score = self.eval_metrics.evaluate(Y, A)
+		if type(score) == dict:
+			score['reg_loss'] = reg_loss
+			score['loss_tot'] = score[self.loss] + score['reg_loss']
+		elif type(score) == list:
+			score[-1]['reg_loss'] = reg_loss
+			score[-1]['loss_tot'] = score[-1][self.loss] + score[-1]['reg_loss']
+
+		self.train_score = score
+
+		return self.train_score
+
+	def evaluate(self, Y, A, reg_loss):
+
+		score = self.eval_metrics.evaluate(Y, A)
+		if type(score) == dict:
+			score['reg_loss'] = reg_loss
+			score['loss_tot'] = score[self.loss] + score['reg_loss']
+		elif type(score) == list:
+			score[-1]['reg_loss'] = reg_loss
+			score[-1]['loss_tot'] = score[-1][self.loss] + score[-1]['reg_loss']
+
+		self.score = score
+		
 		return self.score
 
 	def train_print(self, i, epochs):
-		self.train_metrics.train_print(i, epochs, self.loss, self.score)
-		return True
+		self.train_metrics.train_print(i, epochs, self.train_score, self.loss)
 
 import numpy as np
 from meik.utils.losses import mae, mse 
@@ -70,14 +90,11 @@ class metrics_regression:
 		
 		return results
 
-	def train_print(self, i, epochs, loss, results):
+	def train_print(self, i, epochs, results, loss):
 
-		cost = results[loss]
-		print_text = "Epoch %d/%d - "+loss+": %.4f"
-		print_params = (i+1, epochs, cost)
+		print_text = "Epoch %d/%d - loss_tot: %.4f - reg_loss: %.4f - "+loss+": %.4f"
+		print_params = (i+1, epochs, results['loss_tot'], results['reg_loss'], results[loss])
 		print(print_text % print_params)
-
-		return True
 	
 	def rmse(self,y,yhat):
 		return np.sqrt(mse(y,yhat))
@@ -94,7 +111,7 @@ from meik.utils.losses import binary_crossentropy
 
 class metrics_binary_classification:
 	
-	def __init__(self, metrics = ['binary_crossentropy','accuracy'], thresholds = np.array([0.5])):
+	def __init__(self, metrics = ['accuracy', 'binary_crossentropy'], thresholds = np.array([0.5])):
 		
 		for metric in metrics:
 			assert(metric in ['accuracy', 'binary_crossentropy', 'precision', 'sensitivity', 'specificity', 'confusion_matrix', 'AUC', 'ROC']), "Make sure the metrics you have provided belong to the following: 'accuracy', 'binary_crossentropy', 'precision', 'sensitivity', 'specificity', 'confusion_matrix', 'AUC' or 'ROC'"
@@ -103,11 +120,8 @@ class metrics_binary_classification:
 		self.th = thresholds
 		
 	def evaluate(self, Y, A):
-		
-		self.populations(Y, A)
 
-		self.accuracy_ = self.accuracy()
-		self.binary_crossentropy_ = self.binary_crossentropy(Y, A)
+		self.populations(Y, A)
 
 		results = {}
 		for metric in self.metrics:
@@ -117,19 +131,17 @@ class metrics_binary_classification:
 			else:
 				result = method()
 			results[metric] = result
+	
+		results['accuracy'] = self.accuracy()
+		results['binary_crossentropy'] = self.binary_crossentropy(Y, A)
 			
 		return results
 
-	def train_print(self, i, epochs, loss, results):
+	def train_print(self, i, epochs, results, loss):
 
-		accuracy = self.accuracy_
-		cost = self.binary_crossentropy_
-
-		print_text = "Epoch %d/%d - binary_crossentropy: %.4f - acc: %.4f"
-		print_params = (i+1, epochs, cost, accuracy)
+		print_text = "Epoch %d/%d - loss_tot: %.4f - reg_loss: %.4f - binary_crossentropy: %.4f - acc: %.4f"
+		print_params = (i+1, epochs, results['loss_tot'], results['reg_loss'], results['binary_crossentropy'], results['accuracy'])
 		print(print_text % print_params)
-
-		return True
 	
 	def binary_crossentropy(self, Y, A):
 		# here for clarity
@@ -264,8 +276,12 @@ class metrics_categorical_classification(metrics_binary_classification):
 		
 		c = Y.shape[0]
 		m = Y.shape[1]
+
+		loss = losses.categorical_crossentropy(Y, A)
+
 		results = [{} for i in range(c)]
-		results.append({'categorical_crossentropy': losses.categorical_crossentropy(Y, A)})
+		results.append({'categorical_crossentropy': loss})
+
 		for i in range(c):
 			
 			self.populations(Y[i,:].reshape(1,m), A[i,:].reshape(1,m))
@@ -282,12 +298,8 @@ class metrics_categorical_classification(metrics_binary_classification):
 			
 		return results
 		
-	def train_print(self, i, epochs, loss, results):
+	def train_print(self, i, epochs, results, loss):
 
-		cost = results[-1]['categorical_crossentropy']
-
-		print_text = "Epoch %d/%d - categorical_crossentropy: %.4f"
-		print_params = (i+1, epochs, cost)
+		print_text = "Epoch %d/%d - loss_tot: %.4f - reg_loss: %.4f - categorical_crossentropy: %.4f"
+		print_params = (i+1, epochs, results[-1]['loss_tot'], results[-1]['reg_loss'], results[-1]['categorical_crossentropy'])
 		print(print_text % print_params)
-
-		return True
