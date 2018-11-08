@@ -6,6 +6,7 @@ from meik.utils.losses import *
 from meik.layers import Layer
 from meik.metrics import Metrics
 from meik.normalizers import Normalizer
+from meik.layers import Dropout
 
 class Sequential:
 	
@@ -55,6 +56,16 @@ class Sequential:
 		
 		A = X
 		for i in range(len(layers)):
+			A = layers[i].predict(A)
+		
+		return A
+
+	def forwardprop(self, X):
+
+		layers = self.layers
+		
+		A = X
+		for i in range(len(layers)):
 			A = layers[i].forwardprop(A)
 		
 		return A
@@ -88,7 +99,7 @@ class Sequential:
 		
 		for i in range(epochs):
 			
-			A = self.predict(X_norm)
+			A = self.forwardprop(X_norm)
 			self.backprop(Y, A)
 			
 			reg_loss = self.regularization_loss()

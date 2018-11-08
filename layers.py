@@ -19,6 +19,18 @@ class Layer:
 		
 		self.id = _id
 		self.inputs = inputs
+
+	def forwardprop(self, A0):
+		pass
+
+	def backwardprop(self, dA0):
+		pass
+
+	def update(self):
+		pass
+
+	def predict(self, A0):
+		pass
 		
 class Dense(Layer):
 	
@@ -55,6 +67,9 @@ class Dense(Layer):
 		self.dW = None
 		self.db = None
 
+		# setting prediction of layer as forwardprop
+		self.predict = self.forwardprop
+
 	def init(self, _id, inputs):
 
 		self.id = _id
@@ -81,7 +96,7 @@ class Dense(Layer):
 		self.A0 = A0
 		
 		return A
-		
+
 	def backprop(self, dA0):
 		
 		A = self.A
@@ -130,3 +145,42 @@ class Dense(Layer):
 		
 		self.W = W
 		self.b = b
+
+import numpy as np
+
+class Dropout(Layer):
+
+	def __init__(self, keep_prob = 0.9):
+
+		self.keep_prob = keep_prob
+
+	def init(self,_id, inputs):
+		
+		self.id = _id
+		self.inputs = inputs
+		self.units = inputs
+
+	def forwardprop(self,A):
+		
+		p = self.keep_prob
+
+		shape = (A.shape[0],1)
+		mask = np.random.random(shape) < p
+
+		A *= mask*(1/p)
+
+		self.mask = mask
+
+		return A
+
+	def backprop(self,dA):
+
+		p = self.keep_prob
+		mask = self.mask
+
+		dA *= mask*(1/p)
+
+		return dA
+
+	def predict(self,A):
+		return A
