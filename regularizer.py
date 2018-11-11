@@ -21,13 +21,14 @@ class Regularizer:
 
 
 	def l2(self, W):
-		return np.sum(W**2)*self.lambda_
+		return np.sum(W**2)*self.lambda_/2.
 
 	def l2_update(self, W):
-		return np.sign(W)*self.lambda_
+		return W*self.lambda_
 
 	def l1(self, W):
 		return np.sum(abs(W))*self.lambda_
 
 	def l1_update(self, W):
-		return W*self.lambda_
+		return np.sign(W)*self.lambda_
+
