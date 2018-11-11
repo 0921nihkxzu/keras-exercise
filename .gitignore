@@ -2,3 +2,4 @@ __pycache__
 utils/__pycache__
 push_repo
 .ipynb_checkpoints
+misc.ipynb
