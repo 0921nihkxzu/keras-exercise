@@ -78,6 +78,12 @@ class Sequential:
 		dA = self.layers[-1].backprop_output(dZ)
 		for i in range(len(layers)-2,-1,-1):
 			dA = layers[i].backprop(dA)
+	
+	def update(self):
+
+		layers = self.layers
+
+		for i in range(len(layers)-1,-1,-1):
 			layers[i].update()
 
 	def regularization_loss(self):
@@ -101,6 +107,7 @@ class Sequential:
 			
 			A = self.forwardprop(X_norm)
 			self.backprop(Y, A)
+			self.update()
 			
 			reg_loss = self.regularization_loss()
 			cost = self.metrics.train(Y, A, reg_loss)
