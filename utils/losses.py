@@ -9,7 +9,7 @@ def mae(y,yhat):
 
 def mse(y,yhat):
     m = y.shape[1]
-    return 1./m*np.sum((y-yhat)**2)
+    return 1./(2.*m)*np.sum((y-yhat)**2)
 
 def binary_crossentropy(y,yhat):
     m = y.shape[1]

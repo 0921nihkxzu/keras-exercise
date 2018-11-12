@@ -74,7 +74,10 @@ class Sequential:
 		
 		layers = self.layers
 		
-		dZ = A - Y
+		if self.params["loss"] in ['mse', 'binary_crossentropy', 'categorical_crossentropy']:
+			dZ = A - Y
+		elif self.params["loss"] == 'mae':
+			dZ = np.sign(A - Y)
 		dA = self.layers[-1].backprop_output(dZ)
 		for i in range(len(layers)-2,-1,-1):
 			dA = layers[i].backprop(dA)

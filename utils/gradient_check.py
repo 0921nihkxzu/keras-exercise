@@ -65,7 +65,7 @@ def J(model, theta, X, Y):
     
     return cost+reg_loss
 
-def num_grad(J, model, theta, X, Y, epsilon = 1e-5):
+def num_grad(J, model, theta, X, Y, epsilon = 1e-7):
 
     dtheta = np.zeros(theta.shape)
     
