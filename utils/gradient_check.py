@@ -54,6 +54,8 @@ def set_params(model, theta):
 
 def J(model, theta, X, Y):
     
+    m = Y.shape[1]
+
     # set parameters
     set_params(model, theta)
     
@@ -61,7 +63,7 @@ def J(model, theta, X, Y):
     loss = model.params['loss']
     Yhat = model.predict(X)
     cost = getattr(losses,loss)(Y,Yhat)
-    reg_loss = model.regularization_loss()
+    reg_loss = model.regularization_loss(m)
     
     return cost+reg_loss
 
