@@ -1,6 +1,8 @@
 - implemented grad check - done
 	- bug 1: updated weights after calculating derivatives thus numerical gradients were being calculated on updated weights which would obviously be different
-	
+
+- make grad check into function in its own file - Done
+
 - check gradients for:
 	- binary_crossentropy - Done
 	- regression
