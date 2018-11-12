@@ -1,0 +1,15 @@
+- implemented grad check - done
+
+- make grad check into function in its own file - Done
+
+- check gradients for:
+	- binary_crossentropy - Done
+		- bug 1: updated weights after calculating derivatives thus numerical gradients were being calculated on updated weights which would obviously be different
+	- categorical - Done
+	- L2 regression - Done
+		- bug 2: missing 1/2 coefficient for L2 loss
+	- L1 regression - Done
+		- bug 3: missing dZ = np.sign(A - Y) in model for L1 loss
+		- bug 4: epsilon in num_grad was too small -- gradient check error was growing significantly with epochs and network size; changed default epsilon from 1e-5 to 1e-7
+	- regularization L2 and L1 - Done
+		- bug 5: not properly dividing by m in losses and updates

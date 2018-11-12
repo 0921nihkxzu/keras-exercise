@@ -74,24 +74,35 @@ class Sequential:
 		
 		layers = self.layers
 		
-		dZ = A - Y
+		if self.params["loss"] in ['mse', 'binary_crossentropy', 'categorical_crossentropy']:
+			dZ = A - Y
+		elif self.params["loss"] == 'mae':
+			dZ = np.sign(A - Y)
 		dA = self.layers[-1].backprop_output(dZ)
 		for i in range(len(layers)-2,-1,-1):
 			dA = layers[i].backprop(dA)
+	
+	def update(self):
+
+		layers = self.layers
+
+		for i in range(len(layers)-1,-1,-1):
 			layers[i].update()
 
-	def regularization_loss(self):
+	def regularization_loss(self, m):
 
 		loss = 0.
 		for l in self.layers:
 			try:
-				loss += l.regularizer.loss(l.W)
+				loss += l.regularizer.loss(l.W, m)
 			except AttributeError:
 				continue
 
 		return loss
 			
 	def train(self, X, Y, epochs=1, verbose=1):
+
+		m = Y.shape[1]
 		
 		layers = self.layers
 		
@@ -101,8 +112,9 @@ class Sequential:
 			
 			A = self.forwardprop(X_norm)
 			self.backprop(Y, A)
+			self.update()
 			
-			reg_loss = self.regularization_loss()
+			reg_loss = self.regularization_loss(m)
 			cost = self.metrics.train(Y, A, reg_loss)
 			self.cost.append(cost)
 			
@@ -113,12 +125,14 @@ class Sequential:
 		self.metrics.train_print(i, epochs)
 		
 	def evaluate(self, X, Y):
+
+		m = Y.shape[1]
 		
 		X = self.normalize.evaluate(X)
 			
 		A = self.predict(X)
 		
-		reg_loss = self.regularization_loss()
+		reg_loss = self.regularization_loss(m)
 		score = self.metrics.evaluate(Y, A, reg_loss)
 		
 		self.score = score
