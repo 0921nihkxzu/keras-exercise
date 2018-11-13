@@ -1,6 +1,1 @@
-- implement following optimizers:
-	- mini-batch - Done
-	- momentum - Done
-	- RMSprop - Done
-	- Adam - Done
-	- learning rate decay - Done
+- implement batch normalization
