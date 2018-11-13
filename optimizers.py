@@ -8,9 +8,10 @@ class Optimizer:
 
 class SGD(Optimizer):
 
-	def __init__(self, lr=0.01, momentum=0.0):
+	def __init__(self, lr=0.01, momentum=0.0, decay=0.0):
 		
 		self.lr = lr
+		self.decay = decay
 		self.momentum = momentum
 		self.Vdw = 0
 		self.Vdb = 0
@@ -19,10 +20,14 @@ class SGD(Optimizer):
 	def update(self, W, b, dW, db):
 
 		lr = self.lr
+		decay = self.decay
 		b1 = self.momentum
 		Vdw = self.Vdw
 		Vdb = self.Vdb
 		t = self.t
+
+		if decay > 0.0:
+			lr = lr*(1./(1+decay*t))
 
 		Vdw = (b1*Vdw + (1-b1)*dW)
 		Vdb = (b1*Vdb + (1-b1)*db)
@@ -38,10 +43,11 @@ class SGD(Optimizer):
 
 class RMSprop(Optimizer):
 
-	def __init__(self, lr=0.001, rho=0.9, epsilon=1e-9):
+	def __init__(self, lr=0.001, rho=0.9, decay=0.0, epsilon=1e-9):
 		
 		self.lr = lr
 		self.rho = rho
+		self.decay = decay
 		self.epsilon = epsilon
 		self.Sdw = 0
 		self.Sdb = 0
@@ -51,10 +57,14 @@ class RMSprop(Optimizer):
 
 		lr = self.lr
 		rho = self.rho
+		decay = self.decay
 		epsilon = self.epsilon
 		Sdw = self.Sdw
 		Sdb = self.Sdb
 		t = self.t
+
+		if decay > 0.0:
+			lr = lr*(1./(1+decay*t))
 
 		Sdw = (rho*Sdw + (1-rho)*dW**2)/(1-rho**t)
 		Sdb = (rho*Sdb + (1-rho)*db**2)/(1-rho**t)
@@ -70,12 +80,13 @@ class RMSprop(Optimizer):
 
 class Adam(Optimizer):
 
-	def __init__(self, lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-9):
+	def __init__(self, lr=0.001, beta_1=0.9, beta_2=0.999, decay=0.0, epsilon=1e-9):
 
 		self.lr = lr
 		self.epsilon = epsilon
 		self.b1 = beta_1
 		self.b2 = beta_2
+		self.decay = decay
 
 		self.Vdw = 0
 		self.Vdb = 0
@@ -91,18 +102,22 @@ class Adam(Optimizer):
 		epsilon = self.epsilon
 		b1 = self.b1
 		b2 = self.b2
+		decay = self.decay
 		Vdw = self.Vdw
 		Vdb = self.Vdb
 		Sdw = self.Sdw
 		Sdb = self.Sdb
 		t = self.t
 
+		if decay > 0.0:
+			lr = lr*(1./(1+decay*t))
+
 		Vdw = (b1*Vdw + (1-b1)*dW)
 		Vdb = (b1*Vdb + (1-b1)*db)
 
 		Sdw = (b2*Sdw + (1-b2)*dW**2)
-		Sdb = (b2*Sdb + (1-b2)*db**2)
-
+		Sdb = (b2*Sdb + (1-b2)*db**2
+)
 		W = W - lr*Vdw/(np.sqrt(Sdw)+epsilon)
 		b = b - lr*Vdb/(np.sqrt(Sdb)+epsilon)
 

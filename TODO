@@ -1,7 +1,6 @@
 - implement following optimizers:
 	- mini-batch - Done
-	- batch gradient
-	- momentum
-	- RMSprop
-	- Adam
-	- learning rate decay
+	- momentum - Done
+	- RMSprop - Done
+	- Adam - Done
+	- learning rate decay - Done
