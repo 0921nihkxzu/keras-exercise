@@ -19,8 +19,8 @@ class Sequential:
 			'loss': None,
 		}
 		
-		self.cost = []
-		self.accuracy = []
+		self.batch_metrics = []
+		self.epoch_metrics = []
 		
 	def add(self,layer):
 		
@@ -100,24 +100,40 @@ class Sequential:
 
 		return loss
 			
-	def train(self, X, Y, epochs=1, verbose=1):
+	def train(self, X, Y, batch_size=128, epochs=1, verbose=1):
 
 		m = Y.shape[1]
 		
 		layers = self.layers
 		
 		X_norm = self.normalize.train(X)
-		
+
+		assert(batch_size <= m), "Batch size must be less than or equal to training examples m"
+		batches = int(m/batch_size-1e-9)
+
 		for i in range(epochs):
 			
-			A = self.forwardprop(X_norm)
-			self.backprop(Y, A)
-			self.update()
+			A = np.zeros(Y.shape)
+
+			for j in range(batches+1):
+
+				Xt = X_norm[:, j*batch_size:(j+1)*batch_size]
+				Yt = Y[:, j*batch_size:(j+1)*batch_size]
+
+				At = self.forwardprop(Xt)
+				self.backprop(Yt, At)
+				self.update()
+			
+				reg_loss = self.regularization_loss(batch_size)
+				batch_metrics = self.metrics.train(Yt, At, reg_loss)
+				self.batch_metrics.append(batch_metrics)
+
+				A[:, j*batch_size:(j+1)*batch_size] = At
 			
 			reg_loss = self.regularization_loss(m)
-			cost = self.metrics.train(Y, A, reg_loss)
-			self.cost.append(cost)
-			
+			epoch_metrics = self.metrics.train(Y, A, reg_loss)
+			self.epoch_metrics.append(epoch_metrics)
+
 			if verbose == 1:
 				self.metrics.train_print(i, epochs)
 			
