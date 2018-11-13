@@ -7,6 +7,8 @@ from meik.layers import Layer
 from meik.metrics import Metrics
 from meik.normalizers import Normalizer
 from meik.layers import Dropout
+from meik import optimizers
+import copy
 
 class Sequential:
 	
@@ -36,19 +38,25 @@ class Sequential:
 		layer.init(_id, inputs)
 		self.layers.append(layer)
 			
-	def build(self, loss = None, normalization = 'none', learning_rate = 0.01, train_metrics = None, eval_metrics = None, thresholds = np.array([0.5])):
+	def build(self, loss = None, normalization = 'none', optimizer = 'SGD', train_metrics = None, eval_metrics = None, thresholds = np.array([0.5])):
 		
 		self.params['loss'] = loss
-		self.params['learning_rate'] = learning_rate
 		self.params['normalization'] = normalization
+		self.params['optimizer'] = optimizer
 		
 		self.normalize = Normalizer(method = normalization)
 		
 		self.metrics = Metrics(loss = loss, train_metrics = train_metrics, eval_metrics = eval_metrics, thresholds = thresholds)
 
-		# TO DO: proper optimizer objects passed to layer
+		if type(optimizer) == str:
+			assert(optimizer in ['SGD', 'RMSprop', 'Adam']), "If providing optimizer as a string provide string as SGD', 'RMSprop' or 'Adam' -- note: default parameters will be used"
+			self.optimizer = getattr(optimizers, optimizer)()
+		else:
+			assert(issubclass(type(optimizer), optimizers.Optimizer)), "Provide optimizer as string or optimizer object"
+			self.optimizer = optimizer
+
 		for i in range(len(self.layers)):
-			self.layers[i].learning_rate = learning_rate
+			self.layers[i].optimizer = copy.deepcopy(self.optimizer)
 
 	def predict(self,X):
 		

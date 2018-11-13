@@ -46,7 +46,7 @@ class Dense(Layer):
 		self.inputs = inputs
 		self.units = units
 		self.activation = activation
-		self.learning_rate = None
+		self.optimizer = None #this gets assigned by model in model.build()
 
 		# setting initializer
 		self.initializer = Initializer(activation = activation, initialization = initialization, init_params = init_params)
@@ -134,14 +134,12 @@ class Dense(Layer):
 	
 	def update(self):
 		
-		a = self.learning_rate
 		W = self.W
 		b = self.b
 		dW = self.dW
 		db = self.db
 		
-		W = W - a*dW
-		b = b - a*db
+		W, b = self.optimizer.update(W, b, dW, db)
 		
 		self.W = W
 		self.b = b

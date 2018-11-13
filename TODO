@@ -1,6 +1,6 @@
-- implement optimizer class with following:
+- implement following optimizers:
+	- mini-batch - Done
 	- batch gradient
-	- mini-batch
 	- momentum
 	- RMSprop
 	- Adam
