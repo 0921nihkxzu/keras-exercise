@@ -98,7 +98,7 @@ def gradient_check(model, X, Y):
 	assert(type(model) == Sequential), "Provide a Sequential model for verifying gradients"
 	
 	# obtain prediction
-	A = model.forwardprop(X)
+	A = model.grad_check_predict(X)
 
 	# calculate model based gradients
 	model.backprop(Y, A)
