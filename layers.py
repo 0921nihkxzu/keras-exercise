@@ -69,6 +69,7 @@ class Dense(Layer):
 
 		# setting prediction of layer as forwardprop
 		self.predict = self.forwardprop
+		self.grad_check_predict = self.forwardprop
 
 	def init(self, _id, inputs):
 
@@ -144,13 +145,12 @@ class Dense(Layer):
 		self.W = W
 		self.b = b
 
-import numpy as np
-
 class Dropout(Layer):
 
 	def __init__(self, keep_prob = 0.9):
 
 		self.keep_prob = keep_prob
+		self.grad_check_predict = self.predict
 
 	def init(self,_id, inputs):
 		
@@ -182,3 +182,112 @@ class Dropout(Layer):
 
 	def predict(self,A):
 		return A
+
+class Batch_norm(Layer):
+
+	def __init__(self, exp_w = 0.90, epsilon = 1e-9):
+
+		self.epoch_mean = 0.
+		self.epoch_var = 0.
+		
+		self.epsilon = epsilon
+		self.a = exp_w
+
+		self.gamma = None
+		self.beta = None
+
+		self.optimizer = None #this gets assigned by model in model.build()
+
+		self.grad_check_predict = self.forwardprop
+
+	def init(self,_id, inputs):
+		
+		self.id = _id
+		self.inputs = inputs
+		self.units = inputs
+
+		self.gamma = np.ones((inputs,1))
+		self.beta = np.zeros((inputs,1))
+
+	def forwardprop(self, Z):
+
+		eps = self.epsilon
+		a = self.a
+
+		g = self.gamma
+		b = self.beta
+
+		u = np.mean(Z, axis = 1, keepdims = True)
+		var = np.var(Z, axis = 1, keepdims = True)
+
+		Z_norm = (Z - u)/np.sqrt(var + eps) 
+
+		Z_t = g*Z_norm + b
+
+		self.Z = Z
+		self.Z_norm = Z_norm
+		self.u = u
+		self.var = var
+
+		self.epoch_var = (a*self.epoch_var+(1-a)*var)
+		self.epoch_mean = (a*self.epoch_mean+(1-a)*u)
+
+		return Z_t
+
+	def backprop(self, dZ_t):
+
+		Z_norm = self.Z_norm
+		g = self.gamma
+
+		var = self.var
+		eps = self.epsilon
+
+		Z = self.Z
+		u = self.u
+
+		m = Z.shape[1]
+
+		dZ_norm = dZ_t*g
+
+		dvar = np.sum(dZ_norm * (Z - u), axis = 1, keepdims=True) * -1./2*(var+eps)**(-3./2)
+
+		du = np.sum(dZ_norm * -1./np.sqrt(var+eps), axis = 1, keepdims=True) + dvar * -2./m*np.sum(Z - u, axis = 1, keepdims=True)
+
+		dZ = dZ_norm*1./np.sqrt(var+eps) + dvar*2./m*(Z - u) + 1./m*du
+
+		dg = np.sum(dZ_t*Z_norm, axis = 1, keepdims=True)
+
+		db = np.sum(dZ_t, axis = 1, keepdims=True)
+
+		self.dg = dg
+		self.db = db
+
+		return dZ
+
+	def predict(self, Z):
+
+		var = self.epoch_var
+		u = self.epoch_mean
+
+		eps = self.epsilon
+
+		g = self.gamma
+		b = self.beta
+
+		Z_norm = (Z - u)/np.sqrt(var + eps) 
+
+		Z_t = g*Z_norm + b
+
+		return Z_t
+
+	def update(self):
+
+		g = self.gamma
+		b = self.beta
+		dg = self.dg
+		db = self.db
+
+		g, b = self.optimizer.update(g, b, dg, db)
+
+		self.gamma = g
+		self.beta = b

@@ -61,7 +61,7 @@ def J(model, theta, X, Y):
     
     # calculate loss
     loss = model.params['loss']
-    Yhat = model.predict(X)
+    Yhat = model.grad_check_predict(X)
     cost = getattr(losses,loss)(Y,Yhat)
     reg_loss = model.regularization_loss(m)
     
@@ -98,7 +98,7 @@ def gradient_check(model, X, Y):
 	assert(type(model) == Sequential), "Provide a Sequential model for verifying gradients"
 	
 	# obtain prediction
-	A = model.predict(X)
+	A = model.forwardprop(X)
 
 	# calculate model based gradients
 	model.backprop(Y, A)

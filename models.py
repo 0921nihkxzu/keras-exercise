@@ -68,6 +68,16 @@ class Sequential:
 		
 		return A
 
+	def grad_check_predict(self,X):
+		
+		layers = self.layers
+		
+		A = X
+		for i in range(len(layers)):
+			A = layers[i].grad_check_predict(A)
+		
+		return A
+
 	def forwardprop(self, X):
 
 		layers = self.layers
