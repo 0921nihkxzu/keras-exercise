@@ -1,1 +1,5 @@
-- implement batch normalization - Done
+- do mnist with fully connected
+- implement convolution as matrix multiplication
+- implement pool layer
+- implement flatten layer
+- do mnist with convolution layer
