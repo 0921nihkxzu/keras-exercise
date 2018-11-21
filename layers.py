@@ -23,7 +23,7 @@ class Layer:
 	def forwardprop(self, A0):
 		pass
 
-	def backwardprop(self, dA0):
+	def backprop(self, dA0):
 		pass
 
 	def update(self):

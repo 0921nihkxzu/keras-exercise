@@ -31,14 +31,20 @@ def set_params(model, theta):
         
         try:
             W_shape = layer.W.shape
-            W_len = W_shape[0]*W_shape[1]
+            #W_len = W_shape[0]*W_shape[1]
+            W_len = 1
+            for i in range(len(W_shape)):
+                W_len *= W_shape[i]
 
             W = theta[idx:idx+W_len].reshape(W_shape)
 
             idx += W_len
 
             b_shape = layer.b.shape
-            b_len = b_shape[0]
+            #b_len = b_shape[0]
+            b_len = 1
+            for i in range(len(b_shape)):
+                b_len *= b_shape[i]
 
             b = theta[idx:idx+b_len].reshape(b_shape)
 

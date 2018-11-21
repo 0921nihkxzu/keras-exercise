@@ -30,7 +30,7 @@ class Sequential:
 		
 		_id = len(self.layers)
 		if _id == 0:
-			assert(type(layer.inputs) == int), "Provide number of inputs for initial layer"
+			#assert(type(layer.inputs) == int), "Provide number of inputs for initial layer"
 			inputs = layer.inputs
 		else:
 			inputs = self.layers[-1].units
