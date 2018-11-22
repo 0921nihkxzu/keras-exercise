@@ -1,4 +1,4 @@
-- do mnist with fully connected
+- do mnist with fully connected - Done
 - implement convolution as matrix multiplication
 - implement pool layer
 - implement flatten layer
