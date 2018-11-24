@@ -1,5 +1,8 @@
 - do mnist with fully connected - Done
-- implement convolution as matrix multiplication
+- implement convolution as matrix multiplication:
+	- forward - Done
+		- 3D broadcasting implementation of im2col with seperate index generation - Done 
+	- backward
 - implement pool layer
 - implement flatten layer
 - do mnist with convolution layer
