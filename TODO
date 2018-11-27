@@ -1,8 +1,37 @@
+
+-------------------------
+--!!Clean up workflow!!--
+-------------------------
+- for each task define a specific goal
+	- a function that does X
+	- needs to pass tests Y
+	- create notebook entry for task
+	- each section should be standalone
+	- write code with dummy variables
+	- create function
+	- test function
+	- store function in a file
+	- test function from file
+	- clear notebook of dummy code and function, only leaving test of final function from file
+-------------------------
+|||||||||||||||||||||||||
+-------------------------
+
 - do mnist with fully connected - Done
 - implement convolution as matrix multiplication:
 	- forward - Done
 		- 3D broadcasting implementation of im2col with seperate index generation - Done 
-	- backward
-- implement pool layer
+	- backward - Done
+		- clean up col2im with np.ufunc.at - Done
+	- clean up and implement as layer - Done
+		- add f1, f2 instead of f - Done
+		- have seperate im2col - Done
+		- add padding/de-padding function - Done
+		- have im2col_bc, im2col_3d_idxs_bc, padding, depadding in utils - Done
+		- add padding and depadding to forward/backward - Done
+- implement pool layer - 
 - implement flatten layer
 - do mnist with convolution layer
+
+
+Note to self: don't worry about messing up, thats what version control is for!

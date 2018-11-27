@@ -291,3 +291,191 @@ class Batch_norm(Layer):
 
 		self.gamma = g
 		self.beta = b
+
+from meik.layers import Layer
+from meik.initializer import Initializer
+from meik.utils import activations
+from meik.utils.convolution import im2col, im2col_idxs, padding, depadding
+
+class Convolution3D(Layer):
+	
+	def __init__(self, filters, kernel_size = (3,3), stride = 1, padding = 'valid', inputs = None, units = None, activation = None, initialization = None, init_params = None):
+		
+		Layer.__init__(self)
+		
+		self.id = None
+
+		self.inputs = inputs
+		self.units = units
+		self.activation = activation
+		self.optimizer = None #this gets assigned by model in model.build()
+		
+		self.fh, self.fw = kernel_size
+		self.nc = filters
+		self.s = stride
+		self.padding = padding
+		self.ph, self.pw = (None,None) 
+
+		# setting activation methods
+		self.g = getattr(activations, activation)
+		self.dg = getattr(activations, 'd'+activation)
+
+		# setting initializer
+		self.initializer = Initializer(activation = activation, initialization = initialization, init_params = init_params)
+
+		# declaring important variables            
+		self.W = None
+		self.b = None
+		self.A = None
+		self.A0 = None
+
+		self.dW = None
+		self.db = None
+		
+		# im2col indexes
+		self.idxs = None
+
+		# setting prediction of layer as forwardprop
+		self.predict = self.forwardprop
+		self.grad_check_predict = self.forwardprop
+
+	def init(self, _id, inputs):
+		
+		self.id = _id
+		self.inputs = inputs
+
+		fh, fw = (self.fh, self.fw)
+		s = self.s
+		nc = self.nc
+		padding = self.padding
+		
+		nh_0, nw_0, nc_0 = inputs
+		
+		if padding == 'valid':
+			
+			ph, pw = (0, 0)
+			self.ph, self.pw = (0, 0)
+			
+		elif padding == 'same':
+			
+			ph = (nh_0*(s-1)+fh-s)/2
+			pw = (nw_0*(s-1)+fw-s)/2
+			
+			assert (ph%1 == 0.0 and pw%1 == 0.0), "For 'same' padding ensure the filter size and stride are appropriate: e.g. (nw_0*(s-1)+fw-s)%2 == 0" 
+			
+			ph = int(ph)
+			pw = int(pw)
+			
+			self.ph = ph
+			self.pw = pw
+
+		nh = (nh_0+2*ph-fh)/s+1
+		nw = (nw_0+2*pw-fw)/s+1
+		
+		assert(nh%1 == 0.0 and nw%1 == 0.0), "Ensure the combination of input size, filter size and stride produce an integer output shape: e.g. ((nw_0+2*pw-fw)/s+1)%1 == 0"
+		
+		self.nh = int(nh)
+		self.nw = int(nw)
+		
+		self.units = (self.nh, self.nw, self.nc)
+		
+		self.W = self.initializer.initialize((fh,fw,nc_0,nc))
+		self.b = np.zeros((1, 1, 1, nc))
+		
+		self.idxs = im2col_idxs(nh_0+2*ph, nw_0+2*pw, nc_0, fh, fw, s)
+
+	# http://cs231n.github.io/convolutional-networks/
+	# matrix multiplication version
+
+	
+	def forwardprop(self, A0):
+
+		g, W, b, fh, fw, s, ph, pw, nh, nw, nc, idxs = (self.g, self.W, self.b, self.fh, self.fw, self.s, self.ph, self.pw, self.nh, self.nw, self.nc, self.idxs)
+
+		A0 = padding(A0, ph, pw)
+		
+		m, _, _, nc_0 = A0.shape
+		
+		A0_col = im2col(A0, fh, fw, s, idxs=idxs)
+
+		W = W.reshape(fh*fw*nc_0,nc).T
+
+		Z = np.zeros((m, nh, nw, nc))
+
+		for i in range(m):
+
+			Z[i] = np.dot(W,A0_col[i]).T.reshape(1, nh, nw, nc)
+
+		Z += b
+
+		A = g(Z)
+
+		self.A = A
+		self.A0_col = A0_col
+
+		return A
+	
+	def backprop(self, dA0):
+
+		A, A0_col, W, dg, idxs, nh, nw, nc, ph, pw = (self.A, self.A0_col, self.W, self.dg, self.idxs, self.nh, self.nw, self.nc, self.ph, self.pw)
+
+		nh_0, nw_0, nc_0 = self.inputs
+
+		m, _, _ = A0_col.shape
+		
+		fh, fw, nc_0, nc = W.shape
+
+		# dZ and db
+		
+		dZ = dA0*self.dg(A)
+
+		axes = tuple(i for i in range(1,len(dZ.shape)))
+		db = np.sum(dZ, axis=axes, keepdims=True)
+
+		# dW and dA_col
+		W_ = W.reshape(fh*fw*nc_0, nc)
+		dZ_ = np.swapaxes(dZ.reshape(m, nh*nw, nc),1,2)
+	
+		dW_ = np.zeros(W_.shape)
+		dA_col = np.zeros(A0_col.shape)
+		
+		for i in range(m):
+
+			dA_col[i] = np.dot(W_, dZ_[i])
+			dW_ += np.dot(A0_col[i], dZ_[i].T)
+
+		dW_ *= 1./m
+		dW = dW_.reshape(W.shape)
+	
+		# flattening where features (f x f x nc_0), then training examples, are concatenated
+		dA_col = np.swapaxes(dA_col,1,2).flatten()
+
+		# dA from dA_col
+		dA = np.zeros((m, nh_0+2*ph, nw_0+2*pw, nc_0)).flatten()
+	
+		# col2im_v2: using np.ufunc.at
+		# generating indices for flattening across training examples
+		idxs_m = ((np.arange(m)*(nh_0+2*ph)*(nw_0+2*pw)*nc_0)[:,None] + idxs.flatten()).flatten()
+	
+		# adds dA_col to the correct location in the input volume 
+		# by accumulating the result for elements that are indexed multiple times
+		# (fancy indexing doesn't let you accumulate)
+		np.add.at(dA, idxs_m, dA_col)
+	
+		dA = dA.reshape(m, nh_0+2*ph, nw_0+2*pw, nc_0)
+
+		dA = depadding(dA, ph, pw)
+		
+		return dA
+	
+	def update(self):
+
+		W = self.W
+		b = self.b
+		dW = self.dW
+		db = self.db
+
+		W, b = self.optimizer.update(W, b, dW, db)
+
+		self.W = W
+		self.b = b
