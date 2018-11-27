@@ -25,7 +25,7 @@ def im2col(A0,fh,fw,s,idxs=None):
 	nw = int((nw_0-fw)/s)+1
 	
 	if type(idxs)==type(None):
-		idxs = im2col_3d_idxs_bc(nh_0, nw_0, fh, fw, s)
+		idxs = im2col_idxs(nh_0, nw_0, nc_0, fh, fw, s)
 	
 	# Note: arranging colums where channels are appended to each other pixel by pixel
 	return np.swapaxes(A0.reshape(m,nh_0*nw_0*nc_0)[:,idxs].reshape(m,nh*nw,fh*fw*nc_0),1,2)
