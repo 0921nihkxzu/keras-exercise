@@ -80,18 +80,18 @@ class Dense(Layer):
 		j = self.inputs
 		
 		# initialize weights
-		self.W = self.initializer.initialize((j,i)) # 2,32
+		self.W = self.initializer.initialize((j,i))
 
 		# initialize biases    
-		self.b = np.zeros((1,i)) #1,32
+		self.b = np.zeros((1,i))
 				
-	def forwardprop(self, A0): # 1600, 2
+	def forwardprop(self, A0):
 		
 		W = self.W
 		b = self.b
 		
 		Z = np.matmul(A0, W)+b 
-		A = self.g(Z) #1600,32
+		A = self.g(Z)
 		
 		self.A = A
 		self.A0 = A0
@@ -106,10 +106,10 @@ class Dense(Layer):
 		
 		m = A.shape[0]
 		
-		dZ = dA0*self.dg(A) # 1600,32
-		dW = 1./m*(np.matmul(A0.T, dZ)) + self.regularizer.update(W, m) #2, 1600 * 1600, 32 = 2, 32
-		db = 1./m*np.sum(dZ, axis=0, keepdims=True) # 1, 32
-		dA = np.matmul(dZ, W.T) # 1600, 32 * 32, 2  = 1600, 2
+		dZ = dA0*self.dg(A)
+		dW = 1./m*(np.matmul(A0.T, dZ)) + self.regularizer.update(W, m)
+		db = 1./m*np.sum(dZ, axis=0, keepdims=True)
+		dA = np.matmul(dZ, W.T)
 		
 		self.dW = dW
 		self.db = db
@@ -299,7 +299,7 @@ from meik.utils.convolution import im2col, im2col_idxs, padding, depadding
 
 class Convolution3D(Layer):
 	
-	def __init__(self, filters, kernel_size = (3,3), stride = 1, padding = 'valid', inputs = None, units = None, activation = None, initialization = None, init_params = None):
+	def __init__(self, filters, kernel_size = (3,3), stride = 1, padding = 'valid', inputs = None, units = None, activation = None, regularization = None, reg_lambda = 0.01, initialization = None, init_params = None):
 		
 		Layer.__init__(self)
 		
@@ -322,6 +322,9 @@ class Convolution3D(Layer):
 
 		# setting initializer
 		self.initializer = Initializer(activation = activation, initialization = initialization, init_params = init_params)
+
+		# setting regularizer
+		self.regularizer = Regularizer(regularization, reg_lambda)
 
 		# declaring important variables            
 		self.W = None
@@ -387,7 +390,6 @@ class Convolution3D(Layer):
 
 	# http://cs231n.github.io/convolutional-networks/
 	# matrix multiplication version
-
 	
 	def forwardprop(self, A0):
 
@@ -430,7 +432,7 @@ class Convolution3D(Layer):
 		
 		dZ = dA0*self.dg(A)
 
-		axes = tuple(i for i in range(1,len(dZ.shape)))
+		axes = tuple(i for i in range(0,len(dZ.shape)-1))
 		db = np.sum(dZ, axis=axes, keepdims=True)
 
 		# dW and dA_col
@@ -446,7 +448,7 @@ class Convolution3D(Layer):
 			dW_ += np.dot(A0_col[i], dZ_[i].T)
 
 		dW_ *= 1./m
-		dW = dW_.reshape(W.shape)
+		dW = dW_.reshape(W.shape) + self.regularizer.update(W, m)
 	
 		# flattening where features (f x f x nc_0), then training examples, are concatenated
 		dA_col = np.swapaxes(dA_col,1,2).flatten()
@@ -466,6 +468,9 @@ class Convolution3D(Layer):
 		dA = dA.reshape(m, nh_0+2*ph, nw_0+2*pw, nc_0)
 
 		dA = depadding(dA, ph, pw)
+
+		self.dW = dW
+		self.db = db
 		
 		return dA
 	
@@ -600,6 +605,9 @@ class Flatten(Layer):
 		self.id = None
 		self.inputs = None
 		self.units = None
+
+		self.predict = self.forwardprop
+		self.grad_check_predict = self.forwardprop
 	
 	def init(self, _id, inputs):
 		

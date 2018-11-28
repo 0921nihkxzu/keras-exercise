@@ -41,14 +41,16 @@
 ----------------------------------
 - fix ordering of inputs from (a, m) to (m, a) for non-conv layers
 	- Dense - Done
-	- Batch norm - 
-	- dropout
-	- normalization
-	- initialization
-	- 
+	- Batch norm - Done
+	- dropout - Done
+	- normalization - Done
+	- initialization - Done
+	- softmax activation - Done
+	- metrics_categorical_classification - Done
 ----------------------------------
 - do mnist with convolution layer
-- add regularization to convolution
+	- fix bug with conv b summing on wrong axes - Done
+	- added batch progress print - Done
 
-
-Note to self: don't worry about messing up, thats what version control is for!
+- add regularization to convolution - maybe later
+- add dropout to convolution - maybe later

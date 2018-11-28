@@ -9,6 +9,7 @@ from meik.normalizers import Normalizer
 from meik.layers import Dropout
 from meik import optimizers
 import copy
+import time
 
 class Sequential:
 	
@@ -135,6 +136,8 @@ class Sequential:
 
 			for j in range(batches+1):
 
+				t0 = time.time()
+
 				Xt = X_norm[j*batch_size:(j+1)*batch_size, :]
 				Yt = Y[j*batch_size:(j+1)*batch_size, :]
 
@@ -147,6 +150,10 @@ class Sequential:
 				self.batch_metrics.append(batch_metrics)
 
 				A[j*batch_size:(j+1)*batch_size, :] = At
+
+				acc = np.mean([batch_metrics[i]['accuracy'] for i in range(len(batch_metrics)-1)])
+				eta = int((time.time() - t0)*(batches-j))
+				print("\r Batch: %d/%d - accuracy: %f - ETA: %ds" % (j,batches,acc,eta), end = '\r')
 			
 			reg_loss = self.regularization_loss(m)
 			epoch_metrics = self.metrics.train(Y, A, reg_loss)
