@@ -289,7 +289,7 @@ class metrics_categorical_classification(metrics_binary_classification):
 			for metric in self.metrics:
 				method = getattr(self, metric)
 				if metric == 'binary_crossentropy':
-					result = method(Y[:,i].reshape(1,m), A[:,i].reshape(m,1))
+					result = method(Y[:,i].reshape(m,1), A[:,i].reshape(m,1))
 				else:
 					result = method()
 				if metric == 'ROC':
