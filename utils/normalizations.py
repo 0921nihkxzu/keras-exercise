@@ -3,12 +3,7 @@
 import numpy as np
 
 # Methods for each type of standardization
-# 1. Empty dummy for no normalization
-
-none = lambda X, params: X
-none_params = lambda X: [None, None]
-
-# 2. Standardizes features with mean = 0, standard deviation = 1
+# 1. Standardizes features with mean = 0, standard deviation = 1
 def normal(X, params):
     mu, std = params
     return (X-mu)/std
@@ -18,7 +13,7 @@ def normal_params(X):
     std = np.std(X,axis=1).reshape(X.shape[0],1)
     return [mu,std]
 
-#3. Standardizes features within range [-1, 1]
+# 2. Standardizes features within range [-1, 1]
 def bounded(X, params):
     midrange, range_ = params
     return 2*(X-midrange)/range_

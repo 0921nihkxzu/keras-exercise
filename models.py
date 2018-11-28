@@ -38,7 +38,7 @@ class Sequential:
 		layer.init(_id, inputs)
 		self.layers.append(layer)
 			
-	def build(self, loss = None, normalization = 'none', optimizer = 'SGD', train_metrics = None, eval_metrics = None, thresholds = np.array([0.5])):
+	def build(self, loss = None, normalization = None, optimizer = 'SGD', train_metrics = None, eval_metrics = None, thresholds = np.array([0.5])):
 		
 		self.params['loss'] = loss
 		self.params['normalization'] = normalization
