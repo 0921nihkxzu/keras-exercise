@@ -29,9 +29,17 @@
 		- add padding/de-padding function - Done
 		- have im2col_bc, im2col_3d_idxs_bc, padding, depadding in utils - Done
 		- add padding and depadding to forward/backward - Done
-- implement pool layer - 
-- implement flatten layer
+- implement pool layer
+	- pooling function - Done
+	- un-pooling function for max - Done
+	- un-pooling function for avg - Done
+	- un-pooling class - Done
+- implement flatten layer - Done
+	- flattening function - Done
+	- un-flattening function - Done
+	- flattening class - Done
 - do mnist with convolution layer
+- add regularization to convolution
 
 
 Note to self: don't worry about messing up, thats what version control is for!

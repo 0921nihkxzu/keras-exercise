@@ -349,6 +349,7 @@ class Convolution3D(Layer):
 		nc = self.nc
 		padding = self.padding
 		
+		assert(len(inputs.shape) == 3), "Ensure the input is specified as (nh_0, nw_0, nc_0)"
 		nh_0, nw_0, nc_0 = inputs
 		
 		if padding == 'valid':
@@ -479,3 +480,146 @@ class Convolution3D(Layer):
 
 		self.W = W
 		self.b = b
+
+from meik.layers import Layer
+from meik.utils.convolution import im2col, im2col_idxs
+
+class Pool(Layer):
+	
+	def __init__(self, kernel_size = (2,2), stride = (2), mode='max'):
+		
+		Layer.__init__(self)
+		
+		self.id = None
+		self.inputs = None
+		self.units = None
+		
+		self.fh, self.fw = kernel_size
+		self.s = stride
+		self.mode = mode
+	
+		# setting prediction of layer as forwardprop
+		self.predict = self.forwardprop
+		self.grad_check_predict = self.forwardprop
+	
+	def init(self, _id, inputs):
+		
+		self.id = _id
+		self.inputs = inputs
+		
+		fh, fw = (self.fh, self.fw)
+		s = self.s
+		
+		nh_0, nw_0, nc_0 = inputs
+		
+		nh = (nh_0-fh)/s+1
+		nw = (nw_0-fw)/s+1
+
+		assert(nh%1 == 0.0 and nw%1 == 0.0), "Ensure the combination of input size, filter size and stride produce an integer output shape: e.g. ((nw_0+2*pw-fw)/s+1)%1 == 0"
+
+		self.nh = int(nh)
+		self.nw = int(nw)
+		self.nc = nc_0
+
+		self.units = (self.nh, self.nw, self.nc)
+
+		self.idxs = im2col_idxs(nh_0, nw_0, nc_0, fh, fw, s)
+		
+	def forwardprop(self, A0):
+	
+		m = A0.shape[0]
+
+		fh, fw, s, nh, nw, idxs, mode = (self.fh, self.fw, self.s, self.nh, self.nw, self.idxs, self.mode)
+
+		nc_0 = self.inputs[2]
+
+		A0_col = im2col(A0, fh, fw, s, idxs=idxs).reshape(m, fh*fw, nc_0, nh*nw)
+
+		if mode=='max':
+
+			A_pool = np.max(A0_col, axis=1)
+			max_idxs = np.argmax(A0_col, axis=1)
+			self.max_idxs = max_idxs
+
+		elif mode=='avg':
+
+			A_pool = np.mean(A0_col, axis=1)
+
+		return np.swapaxes(A_pool,1,2).reshape(m, nh, nw, nc_0)
+	
+	def backprop(self, A_pool):
+
+		fh, fw, s, nh, nw, idxs, mode = (self.fh, self.fw, self.s, self.nh, self.nw, self.idxs, self.mode)
+
+		nh_0, nw_0, nc_0 = self.inputs
+
+		m = A_pool.shape[0]
+		
+		# obtaining indices of im2col elements in flattened input
+		idxs_m = ((np.arange(m)*nh_0*nw_0*nc_0)[:,None] + idxs.flatten()).flatten()
+
+		# empty target
+		A = np.zeros((m*nh_0*nw_0*nc_0)).flatten()
+
+		if mode == 'max':
+
+			max_idxs = self.max_idxs
+			
+			# converting indices from argmax format to indices of idxs_m
+			max_idxs = np.swapaxes(max_idxs, 1, 2) # rearranging for channels as last dimension
+			max_idxs = max_idxs*nc_0 + np.arange(nc_0)[None,None,:] # incrementing by channel
+			max_idxs += np.arange(nh*nw)[None,:,None]*fh*fw*nc_0 # incrementing by filter offset
+			max_idxs += np.arange(m)[:,None,None]*nh*nw*fh*fw*nc_0 # incrementing by training example
+			max_idxs = max_idxs.flatten()
+
+			# obtaining indices of pooling max elements in flattened input
+			idxs = idxs_m[max_idxs]
+
+			# obtaining values
+			vals = A_pool.flatten()
+
+		elif mode == 'avg':
+
+			# obtaining indices of pooling max elements in flattened input
+			idxs = idxs_m
+
+			# obtaining values
+			vals = 1./(fh*fw) * (np.swapaxes(A_pool[:,:,:,:,None] + np.arange(fh*fw)*0,3,4)).flatten()
+
+		# 0btaining un-pooled A
+		np.add.at(A, idxs, vals)
+
+		return A.reshape(m, nh_0, nw_0, nc_0)
+
+from meik.layers import Layer
+
+class Flatten(Layer):
+
+	def __init__(self):
+		
+		self.id = None
+		self.inputs = None
+		self.units = None
+	
+	def init(self, _id, inputs):
+		
+		self.id = _id
+		self.inputs = inputs
+		
+		nh_0, nw_0, nc_0 = inputs
+		
+		self.units = nh_0*nw_0*nc_0
+		
+	def forwardprop(self, A0):
+		
+		m = A0.shape[0]
+		
+		return A0.reshape(m,-1)
+	
+	def backprop(self, dA0):
+		
+		nh_0, nw_0, nc_0 = self.inputs
+		
+		m = dA0.shape[0]
+		
+		return dA0.reshape(m,nh_0,nw_0,nc_0)
