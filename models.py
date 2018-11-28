@@ -120,7 +120,7 @@ class Sequential:
 			
 	def train(self, X, Y, batch_size=128, epochs=1, verbose=1):
 
-		m = Y.shape[1]
+		m = Y.shape[0]
 		
 		layers = self.layers
 		
@@ -135,8 +135,8 @@ class Sequential:
 
 			for j in range(batches+1):
 
-				Xt = X_norm[:, j*batch_size:(j+1)*batch_size]
-				Yt = Y[:, j*batch_size:(j+1)*batch_size]
+				Xt = X_norm[j*batch_size:(j+1)*batch_size, :]
+				Yt = Y[j*batch_size:(j+1)*batch_size, :]
 
 				At = self.forwardprop(Xt)
 				self.backprop(Yt, At)
@@ -146,7 +146,7 @@ class Sequential:
 				batch_metrics = self.metrics.train(Yt, At, reg_loss)
 				self.batch_metrics.append(batch_metrics)
 
-				A[:, j*batch_size:(j+1)*batch_size] = At
+				A[j*batch_size:(j+1)*batch_size, :] = At
 			
 			reg_loss = self.regularization_loss(m)
 			epoch_metrics = self.metrics.train(Y, A, reg_loss)
@@ -160,7 +160,7 @@ class Sequential:
 		
 	def evaluate(self, X, Y):
 
-		m = Y.shape[1]
+		m = Y.shape[0]
 		
 		X = self.normalize.evaluate(X)
 			

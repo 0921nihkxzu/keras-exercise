@@ -80,18 +80,18 @@ class Dense(Layer):
 		j = self.inputs
 		
 		# initialize weights
-		self.W = self.initializer.initialize((i,j))
+		self.W = self.initializer.initialize((j,i)) # 2,32
 
 		# initialize biases    
-		self.b = np.zeros((i,1))
+		self.b = np.zeros((1,i)) #1,32
 				
-	def forwardprop(self, A0):
+	def forwardprop(self, A0): # 1600, 2
 		
 		W = self.W
 		b = self.b
 		
-		Z = np.matmul(W, A0)+b
-		A = self.g(Z)
+		Z = np.matmul(A0, W)+b 
+		A = self.g(Z) #1600,32
 		
 		self.A = A
 		self.A0 = A0
@@ -104,12 +104,12 @@ class Dense(Layer):
 		A0 = self.A0
 		W = self.W
 		
-		m = A.shape[1]
+		m = A.shape[0]
 		
-		dZ = dA0*self.dg(A)
-		dW = 1./m*(np.matmul(dZ, A0.T)) + self.regularizer.update(W, m)
-		db = 1./m*np.sum(dZ, axis=1, keepdims=True)
-		dA = np.matmul(W.T, dZ)
+		dZ = dA0*self.dg(A) # 1600,32
+		dW = 1./m*(np.matmul(A0.T, dZ)) + self.regularizer.update(W, m) #2, 1600 * 1600, 32 = 2, 32
+		db = 1./m*np.sum(dZ, axis=0, keepdims=True) # 1, 32
+		dA = np.matmul(dZ, W.T) # 1600, 32 * 32, 2  = 1600, 2
 		
 		self.dW = dW
 		self.db = db
@@ -122,11 +122,11 @@ class Dense(Layer):
 		A0 = self.A0
 		W = self.W
 		
-		m = A.shape[1]
+		m = A.shape[0]
 		
-		dW = 1./m*(np.matmul(dZ, A0.T)) + self.regularizer.update(W, m)
-		db = 1./m*np.sum(dZ, axis=1, keepdims=True)
-		dA = np.matmul(W.T, dZ)
+		dW = 1./m*(np.matmul(A0.T, dZ)) + self.regularizer.update(W, m)
+		db = 1./m*np.sum(dZ, axis=0, keepdims=True)
+		dA = np.matmul(dZ, W.T)
 		
 		self.dW = dW
 		self.db = db
@@ -349,7 +349,7 @@ class Convolution3D(Layer):
 		nc = self.nc
 		padding = self.padding
 		
-		assert(len(inputs.shape) == 3), "Ensure the input is specified as (nh_0, nw_0, nc_0)"
+		assert(len(inputs) == 3), "Ensure the input is specified as (nh_0, nw_0, nc_0)"
 		nh_0, nw_0, nc_0 = inputs
 		
 		if padding == 'valid':

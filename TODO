@@ -38,6 +38,9 @@
 	- flattening function - Done
 	- un-flattening function - Done
 	- flattening class - Done
+----------------------------------
+- fix ordering of inputs from (a, m) to (m, a) for non-conv layers
+----------------------------------
 - do mnist with convolution layer
 - add regularization to convolution
 
