@@ -274,8 +274,8 @@ class metrics_categorical_classification(metrics_binary_classification):
 	
 	def evaluate(self, Y, A):
 		
-		c = Y.shape[0]
-		m = Y.shape[1]
+		c = Y.shape[1]
+		m = Y.shape[0]
 
 		loss = losses.categorical_crossentropy(Y, A)
 
@@ -284,12 +284,12 @@ class metrics_categorical_classification(metrics_binary_classification):
 
 		for i in range(c):
 			
-			self.populations(Y[i,:].reshape(1,m), A[i,:].reshape(1,m))
+			self.populations(Y[:,i].reshape(m,1), A[:,i].reshape(m,1))
 
 			for metric in self.metrics:
 				method = getattr(self, metric)
 				if metric == 'binary_crossentropy':
-					result = method(Y[i,:].reshape(1,m), A[i,:].reshape(1,m))
+					result = method(Y[:,i].reshape(1,m), A[:,i].reshape(m,1))
 				else:
 					result = method()
 				if metric == 'ROC':

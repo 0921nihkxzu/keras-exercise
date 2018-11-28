@@ -206,8 +206,8 @@ class Batch_norm(Layer):
 		self.inputs = inputs
 		self.units = inputs
 
-		self.gamma = np.ones((inputs,1))
-		self.beta = np.zeros((inputs,1))
+		self.gamma = np.ones((1, inputs)) # 1, 2
+		self.beta = np.zeros((1, inputs)) # 1, 2
 
 	def forwardprop(self, Z):
 
@@ -217,8 +217,8 @@ class Batch_norm(Layer):
 		g = self.gamma
 		b = self.beta
 
-		u = np.mean(Z, axis = 1, keepdims = True)
-		var = np.var(Z, axis = 1, keepdims = True)
+		u = np.mean(Z, axis = 0, keepdims = True)
+		var = np.var(Z, axis = 0, keepdims = True)
 
 		Z_norm = (Z - u)/np.sqrt(var + eps) 
 
@@ -245,19 +245,19 @@ class Batch_norm(Layer):
 		Z = self.Z
 		u = self.u
 
-		m = Z.shape[1]
+		m = Z.shape[0]
 
 		dZ_norm = dZ_t*g
 
-		dvar = np.sum(dZ_norm * (Z - u), axis = 1, keepdims=True) * -1./2*(var+eps)**(-3./2)
+		dvar = np.sum(dZ_norm * (Z - u), axis = 0, keepdims=True) * -1./2*(var+eps)**(-3./2)
 
-		du = np.sum(dZ_norm * -1./np.sqrt(var+eps), axis = 1, keepdims=True) + dvar * -2./m*np.sum(Z - u, axis = 1, keepdims=True)
+		du = np.sum(dZ_norm * -1./np.sqrt(var+eps), axis = 0, keepdims=True) + dvar * -2./m*np.sum(Z - u, axis = 0, keepdims=True)
 
 		dZ = dZ_norm*1./np.sqrt(var+eps) + dvar*2./m*(Z - u) + 1./m*du
 
-		dg = np.sum(dZ_t*Z_norm, axis = 1, keepdims=True)
+		dg = np.sum(dZ_t*Z_norm, axis = 0, keepdims=True)
 
-		db = np.sum(dZ_t, axis = 1, keepdims=True)
+		db = np.sum(dZ_t, axis = 0, keepdims=True)
 
 		self.dg = dg
 		self.db = db

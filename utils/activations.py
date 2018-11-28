@@ -16,8 +16,8 @@ def tanh(Z):
     return np.tanh(Z)
 
 def softmax(Z):
-    Z = Z - np.amax(Z,axis=0) # to avoid overflow
-    return np.exp(Z)/np.sum(np.exp(Z),axis=0)
+    Z = Z - np.amax(Z,axis=1, keepdims=True) # to avoid overflow
+    return np.exp(Z)/np.sum(np.exp(Z),axis=1, keepdims=True)
 
 # activation function derivatives
 

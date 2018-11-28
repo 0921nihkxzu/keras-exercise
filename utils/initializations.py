@@ -42,7 +42,7 @@ def truncated_normal(shape, params = [0.0, 1.0, 2.0], dtype=np.float64):
 
 def he_normal(shape, dtype=np.float64):
 
-	f_in = shape[1]
+	f_in = shape[0]
 	std = np.sqrt(2/f_in)
 	W = truncated_normal(shape, dtype=dtype)*std
 
@@ -50,7 +50,7 @@ def he_normal(shape, dtype=np.float64):
 
 def he_uniform(shape, dtype=np.float64):
 
-	f_in = shape[1]
+	f_in = shape[0]
 	a = np.sqrt(6/f_in)
 	W = np.random.uniform(-a,a,shape).astype(dtype)
 
@@ -58,8 +58,8 @@ def he_uniform(shape, dtype=np.float64):
 
 def glorot_normal(shape, dtype=np.float64):
 
-	f_out = shape[0]
-	f_in = shape[1]
+	f_out = shape[1]
+	f_in = shape[0]
 	std = np.sqrt(2/(f_in+f_out))
 	W = truncated_normal(shape, dtype=dtype)*std
 
@@ -67,8 +67,8 @@ def glorot_normal(shape, dtype=np.float64):
 
 def glorot_uniform(shape, dtype=np.float64):
 
-	f_out = shape[0]
-	f_in = shape[1]
+	f_out = shape[1]
+	f_in = shape[0]
 	a = np.sqrt(6/(f_in+f_out))
 	W = np.random.uniform(-a,a,shape).astype(dtype)
 
@@ -76,7 +76,7 @@ def glorot_uniform(shape, dtype=np.float64):
 
 def lecun_normal(shape, dtype=np.float64):
 
-	f_in = shape[1]
+	f_in = shape[0]
 	std = np.sqrt(1/f_in)
 	W = truncated_normal(shape, dtype=dtype)*std
 
@@ -84,7 +84,7 @@ def lecun_normal(shape, dtype=np.float64):
 
 def lecun_uniform(shape, dtype=np.float64):
 
-	f_in = shape[1]
+	f_in = shape[0]
 	a = np.sqrt(3/f_in)
 	W = np.random.uniform(-a,a,shape).astype(dtype)
 
