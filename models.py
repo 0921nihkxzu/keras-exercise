@@ -151,7 +151,12 @@ class Sequential:
 
 				A[j*batch_size:(j+1)*batch_size, :] = At
 
-				acc = np.mean([batch_metrics[i]['accuracy'] for i in range(len(batch_metrics)-1)])
+				if self.params['loss'] == 'categorical_crossentropy':
+					acc = np.mean([batch_metrics[i]['accuracy'] for i in range(len(batch_metrics)-1)])
+				elif self.params['loss'] == 'binary_crossentropy':
+					acc = batch_metrics['accuracy']
+				else:
+					acc = 0.0
 				eta = int((time.time() - t0)*(batches-j))
 				print("\r Batch: %d/%d - accuracy: %f - ETA: %ds" % (j,batches,acc,eta), end = '\r')
 			

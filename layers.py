@@ -162,10 +162,13 @@ class Dropout(Layer):
 		
 		p = self.keep_prob
 
-		shape = (A.shape[0],1)
+		shape = list(A.shape)
+		shape[0] = 1
+		shape = tuple(shape)
+
 		mask = np.random.random(shape) < p
 
-		A *= mask*(1/p)
+		A *= mask*(1./p)
 
 		self.mask = mask
 
@@ -176,7 +179,7 @@ class Dropout(Layer):
 		p = self.keep_prob
 		mask = self.mask
 
-		dA *= mask*(1/p)
+		dA *= mask*(1./p)
 
 		return dA
 
